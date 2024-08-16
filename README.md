@@ -20,5 +20,5 @@ This is a simple desktop application for managing users using Tkinter and SQLite
 
    If you're using Git, you can clone the repository with:
    ```sh
-   git clone https://github.com/yourusername/user-management-system.git
+   git clone https://github.com/mashudu2021/user-management-system.git
    cd user-management-system
