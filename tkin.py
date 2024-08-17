@@ -1,8 +1,6 @@
 import tkinter as tk
-from tkinter import messagebox, Scrollbar, VERTICAL, RIGHT, Y
-from tkinter import ttk
+from tkinter import messagebox, ttk
 import sqlite3
-
 
 def initialize_db():
     """Initialize the database and create the table if it doesn't exist."""
@@ -18,7 +16,6 @@ def initialize_db():
     conn.commit()
     conn.close()
 
-
 def add_user(name, email):
     """Add a new user to the database."""
     conn = sqlite3.connect('user_data.db')
@@ -31,7 +28,6 @@ def add_user(name, email):
         messagebox.showerror("Error", "Email already exists!")
     conn.close()
     update_user_list()  # Refresh the user list after adding a user
-
 
 def delete_user(user_id):
     """Delete a user from the database based on their ID."""
@@ -46,7 +42,6 @@ def delete_user(user_id):
     conn.close()
     update_user_list()  # Refresh the user list after deleting a user
 
-
 def view_users():
     """Fetch all users from the database."""
     conn = sqlite3.connect('user_data.db')
@@ -56,7 +51,6 @@ def view_users():
     conn.close()
     return users
 
-
 def update_user_list():
     """Update the Treeview widget to display all users."""
     for row in tree.get_children():
@@ -64,8 +58,7 @@ def update_user_list():
 
     users = view_users()
     for user in users:
-        tree.insert('', tk.END, values=user)
-
+        tree.insert('', tk.END, iid=user[0], values=(user[0], user[1], user[2], ''))
 
 def on_add_button_click():
     """Callback for Add User button."""
@@ -77,7 +70,6 @@ def on_add_button_click():
         email_entry.delete(0, tk.END)
     else:
         messagebox.showwarning("Input Error", "Please fill in all fields.")
-
 
 def on_delete_button_click():
     """Callback for Delete User button."""
@@ -92,11 +84,25 @@ def on_delete_button_click():
     else:
         messagebox.showwarning("Input Error", "Please enter an ID.")
 
-
 def on_refresh_button_click():
     """Callback for Refresh List button."""
     update_user_list()
 
+def on_treeview_click(event):
+    """Handle row selection in the Treeview."""
+    item = tree.identify_row(event.y)
+    if item:
+        # Deselect all rows
+        for row in tree.get_children():
+            current_values = tree.item(row, 'values')
+            tree.item(row, values=(current_values[0], current_values[1], current_values[2], ''))
+        
+        # Select the clicked row
+        current_values = tree.item(item, 'values')
+        tree.item(item, values=(current_values[0], current_values[1], current_values[2], 'Selected'))
+        # Set the ID Entry to the selected ID
+        id_entry.delete(0, tk.END)
+        id_entry.insert(0, current_values[0])
 
 # Initialize the database
 initialize_db()
@@ -105,6 +111,15 @@ initialize_db()
 root = tk.Tk()
 root.title("User Management System")
 root.geometry("600x400")
+
+# Create a frame to hold buttons and pack it to the bottom
+button_frame = tk.Frame(root)
+button_frame.pack(side=tk.BOTTOM, anchor=tk.W, padx=10, pady=10, fill=tk.X)
+
+# Add buttons to the frame
+tk.Button(button_frame, text="Add User", command=on_add_button_click).pack(side=tk.LEFT, padx=5)
+tk.Button(button_frame, text="Delete User", command=on_delete_button_click).pack(side=tk.LEFT, padx=5)
+tk.Button(button_frame, text="Refresh List", command=on_refresh_button_click).pack(side=tk.LEFT, padx=5)
 
 # Create and pack widgets
 tk.Label(root, text="Name:").pack(pady=5)
@@ -119,21 +134,22 @@ tk.Label(root, text="ID (for delete):").pack(pady=5)
 id_entry = tk.Entry(root)
 id_entry.pack(pady=5)
 
-tk.Button(root, text="Add User", command=on_add_button_click).pack(pady=1)
-tk.Button(root, text="Delete User", command=on_delete_button_click).pack(pady=3)
-tk.Button(root, text="Refresh List", command=on_refresh_button_click).pack(pady=5)
-
 # Create a Treeview widget for displaying users
-tree = ttk.Treeview(root, columns=('ID', 'Name', 'Email'), show='headings')
+tree = ttk.Treeview(root, columns=('ID', 'Name', 'Email', 'Select'), show='headings')
 tree.heading('ID', text='ID')
 tree.heading('Name', text='Name')
 tree.heading('Email', text='Email')
+tree.heading('Select', text='Select')
 
 tree.column('ID', width=50, anchor=tk.CENTER)
 tree.column('Name', width=150, anchor=tk.W)
 tree.column('Email', width=250, anchor=tk.W)
+tree.column('Select', width=100, anchor=tk.CENTER)
 
 tree.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
+
+# Bind Treeview click event
+tree.bind('<ButtonRelease-1>', on_treeview_click)
 
 # Initial population of the Treeview
 update_user_list()
